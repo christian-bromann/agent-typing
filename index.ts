@@ -10,8 +10,18 @@ const stateSchema = z.object({
 const agent = createAgent({
     stateSchema,
     middlewares: [
-        middlewareA,  // No need to instantiate - just pass the middleware directly
+        /**
+         * No need to instantiate - just pass the middleware directly
+         * Adds `customPropertyA` to the state
+         */
+        middlewareA,
+        /**
+         * Adds `customPropertyB` to the state
+         */
         middlewareB,
+        /**
+         * Adds `customPropertyC` to the state
+         */
         new MiddlewareC(),
     ] as const,
 });
