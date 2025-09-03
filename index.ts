@@ -7,6 +7,7 @@ const agent = createAgent({
     contextSchema: z.object({
         name: z.string(),
         age: z.number(),
+        country: z.string().default("USA"),
     }),
     middlewares: [
         /**
@@ -28,6 +29,10 @@ const agent = createAgent({
 const result = await agent.invoke("Hello, world!", {
     name: "John",
     age: 30,
+
+    // optional types are not required to be provided
+    // country: "USA",
+    
     // Context from middlewares:
     customContextA: true,    // required by middlewareA
     customContextB: 42,      // required by middlewareB

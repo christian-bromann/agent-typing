@@ -253,6 +253,31 @@ type InferMiddlewareContexts<T extends readonly any[]> = T extends readonly [
             : {}
     : {};
 
+// Helper to infer all middleware contexts (input types with optional defaults)
+type InferMiddlewareContextsInput<T extends readonly any[]> = T extends readonly [
+    infer First,
+    ...infer Rest
+]
+    ? First extends IMiddleware<any, infer ContextSchema, any>
+        ? ContextSchema extends z.ZodObject<any>
+            ? Rest extends readonly any[]
+                ? z.input<ContextSchema> & InferMiddlewareContextsInput<Rest>
+                : z.input<ContextSchema>
+            : Rest extends readonly any[]
+                ? InferMiddlewareContextsInput<Rest>
+                : {}
+        : Rest extends readonly any[]
+            ? InferMiddlewareContextsInput<Rest>
+            : {}
+    : {};
+
+// Helper to check if all properties of a type are optional
+type IsAllOptional<T> = T extends Record<string, any> 
+    ? {} extends T 
+        ? true 
+        : false
+    : true;
+
 /**
  * Configurations for retry call (see below for details)
  */
@@ -287,7 +312,7 @@ function mergeContextSchemas<
 }
 
 export function createAgent<
-    TContextSchema extends z.ZodObject<z.ZodRawShape> = z.ZodObject<{}>,
+    TContextSchema extends z.ZodObject<z.ZodRawShape> | undefined = undefined,
     TMiddlewares extends readonly IMiddleware<any, any, any>[] = []
 >({
     contextSchema,
@@ -298,7 +323,10 @@ export function createAgent<
 }) {
     // Create properly typed middleware array with full state type
     type FullState = InferMergedState<TMiddlewares>;
-    type FullContext = (TContextSchema extends z.ZodObject<any> ? z.infer<TContextSchema> : {}) & InferMiddlewareContexts<TMiddlewares>;
+    // Use z.input to make fields with defaults optional
+    type FullContext = TContextSchema extends z.ZodObject<any> 
+        ? z.input<TContextSchema> & InferMiddlewareContextsInput<TMiddlewares>
+        : InferMiddlewareContextsInput<TMiddlewares>;
     
     // Create merged context schema for validation
     const mergedContextSchema = mergeContextSchemas(contextSchema, middlewares);
@@ -306,8 +334,13 @@ export function createAgent<
     return {
         invoke: async (
             message: string,
-            context: FullContext
+            ...args: IsAllOptional<FullContext> extends true 
+                ? [context?: FullContext] 
+                : [context: FullContext]
         ): Promise<FullState> => {
+            // Parse and validate context with defaults
+            const context = mergedContextSchema.parse(args[0] ?? {}) as FullContext;
+            
             // Create initial runtime
             const runtime: Runtime<FullContext> = {
                 toolCalls: [],
