@@ -152,8 +152,6 @@ export interface IMiddleware<
     ): Promise<MiddlewareResult<Partial<z.infer<TSchema>>>>;
 }
 
-
-
 // defineMiddleware with automatic schema inference
 export function defineMiddleware<
     TSchema extends z.ZodObject<any>,
@@ -235,41 +233,105 @@ type InferMiddlewareStates<T extends readonly any[]> = T extends readonly [
             : {}
     : {};
 
-// Helper to infer all middleware contexts
-type InferMiddlewareContexts<T extends readonly any[]> = T extends readonly [
+// Helper type to extract keys from a Zod schema
+type ExtractZodKeys<T> = T extends z.ZodObject<infer Shape> ? keyof Shape : never;
+
+// Helper type to collect all context keys from middlewares
+type CollectContextKeys<T extends readonly any[], Acc = never> = T extends readonly [
     infer First,
     ...infer Rest
 ]
     ? First extends IMiddleware<any, infer ContextSchema, any>
-        ? ContextSchema extends z.ZodObject<any>
-            ? Rest extends readonly any[]
-                ? z.infer<ContextSchema> & InferMiddlewareContexts<Rest>
-                : z.infer<ContextSchema>
-            : Rest extends readonly any[]
-                ? InferMiddlewareContexts<Rest>
-                : {}
+        ? Rest extends readonly any[]
+            ? CollectContextKeys<Rest, Acc | ExtractZodKeys<ContextSchema>>
+            : Acc | ExtractZodKeys<ContextSchema>
         : Rest extends readonly any[]
-            ? InferMiddlewareContexts<Rest>
+            ? CollectContextKeys<Rest, Acc>
+            : Acc
+    : Acc;
+
+// Helper type to find duplicate keys
+type FindDuplicateKeys<T extends readonly any[], SeenKeys = never> = T extends readonly [
+    infer First,
+    ...infer Rest
+]
+    ? First extends IMiddleware<any, infer ContextSchema, any>
+        ? ExtractZodKeys<ContextSchema> extends infer CurrentKeys
+            ? CurrentKeys extends keyof any
+                ? CurrentKeys & SeenKeys extends never
+                    ? Rest extends readonly any[]
+                        ? FindDuplicateKeys<Rest, SeenKeys | CurrentKeys>
+                        : never
+                    : CurrentKeys & SeenKeys // Return the duplicate keys
+                : Rest extends readonly any[]
+                    ? FindDuplicateKeys<Rest, SeenKeys>
+                    : never
+            : never
+        : Rest extends readonly any[]
+            ? FindDuplicateKeys<Rest, SeenKeys>
+            : never
+    : never;
+
+// Error message type for duplicate context properties
+type DuplicateContextError<Keys extends string> = {
+    error: `Duplicate context properties detected: ${Keys}. Each context property name must be unique across all middlewares and the agent's context schema.`;
+};
+
+// Helper to check for duplicates between agent context and middleware contexts
+type CheckForDuplicateContexts<
+    TContextSchema extends z.ZodObject<any> | undefined,
+    TMiddlewares extends readonly any[]
+> = TContextSchema extends z.ZodObject<any>
+    ? ExtractZodKeys<TContextSchema> & CollectContextKeys<TMiddlewares> extends never
+        ? FindDuplicateKeys<TMiddlewares> extends never
+            ? true // No duplicates
+            : DuplicateContextError<Extract<FindDuplicateKeys<TMiddlewares>, string>>
+        : DuplicateContextError<Extract<ExtractZodKeys<TContextSchema> & CollectContextKeys<TMiddlewares>, string>>
+    : FindDuplicateKeys<TMiddlewares> extends never
+        ? true // No duplicates
+        : DuplicateContextError<Extract<FindDuplicateKeys<TMiddlewares>, string>>;
+
+// Helper to infer all middleware contexts (with duplicate check)
+type InferMiddlewareContexts<T extends readonly any[]> = 
+    FindDuplicateKeys<T> extends never
+        ? T extends readonly [
+            infer First,
+            ...infer Rest
+        ]
+            ? First extends IMiddleware<any, infer ContextSchema, any>
+                ? ContextSchema extends z.ZodObject<any>
+                    ? Rest extends readonly any[]
+                        ? z.infer<ContextSchema> & InferMiddlewareContexts<Rest>
+                        : z.infer<ContextSchema>
+                    : Rest extends readonly any[]
+                        ? InferMiddlewareContexts<Rest>
+                        : {}
+                : Rest extends readonly any[]
+                    ? InferMiddlewareContexts<Rest>
+                    : {}
             : {}
-    : {};
+        : DuplicateContextError<Extract<FindDuplicateKeys<T>, string>>;
 
 // Helper to infer all middleware contexts (input types with optional defaults)
-type InferMiddlewareContextsInput<T extends readonly any[]> = T extends readonly [
-    infer First,
-    ...infer Rest
-]
-    ? First extends IMiddleware<any, infer ContextSchema, any>
-        ? ContextSchema extends z.ZodObject<any>
-            ? Rest extends readonly any[]
-                ? z.input<ContextSchema> & InferMiddlewareContextsInput<Rest>
-                : z.input<ContextSchema>
-            : Rest extends readonly any[]
-                ? InferMiddlewareContextsInput<Rest>
-                : {}
-        : Rest extends readonly any[]
-            ? InferMiddlewareContextsInput<Rest>
+type InferMiddlewareContextsInput<T extends readonly any[]> = 
+    FindDuplicateKeys<T> extends never
+        ? T extends readonly [
+            infer First,
+            ...infer Rest
+        ]
+            ? First extends IMiddleware<any, infer ContextSchema, any>
+                ? ContextSchema extends z.ZodObject<any>
+                    ? Rest extends readonly any[]
+                        ? z.input<ContextSchema> & InferMiddlewareContextsInput<Rest>
+                        : z.input<ContextSchema>
+                    : Rest extends readonly any[]
+                        ? InferMiddlewareContextsInput<Rest>
+                        : {}
+                : Rest extends readonly any[]
+                    ? InferMiddlewareContextsInput<Rest>
+                    : {}
             : {}
-    : {};
+        : DuplicateContextError<Extract<FindDuplicateKeys<T>, string>>;
 
 // Helper to check if all properties of a type are optional
 type IsAllOptional<T> = T extends Record<string, any> 
@@ -311,25 +373,43 @@ function mergeContextSchemas<
     return mergedSchema;
 }
 
+// Create a branded error type that TypeScript will display nicely
+type ContextPropertyConflictError<TKey extends string> = 
+    `Error: Context property '${TKey}' is defined in multiple places. Each context property must have a unique name across the agent's contextSchema and all middleware contextSchemas.`;
+
+// Updated createAgent with clearer error reporting
 export function createAgent<
     TContextSchema extends z.ZodObject<z.ZodRawShape> | undefined = undefined,
     TMiddlewares extends readonly IMiddleware<any, any, any>[] = []
->({
-    contextSchema,
-    middlewares,
-}: {
-    contextSchema?: TContextSchema;
-    middlewares?: TMiddlewares;
-}) {
+>(config: CheckForDuplicateContexts<TContextSchema, TMiddlewares> extends DuplicateContextError<infer Keys>
+    ? Keys extends string
+        ? ContextPropertyConflictError<Keys>
+        : {
+            contextSchema?: TContextSchema;
+            middlewares?: TMiddlewares;
+        }
+    : {
+        contextSchema?: TContextSchema;
+        middlewares?: TMiddlewares;
+    }
+) {
     // Create properly typed middleware array with full state type
     type FullState = InferMergedState<TMiddlewares>;
     // Use z.input to make fields with defaults optional
     type FullContext = TContextSchema extends z.ZodObject<any> 
-        ? z.input<TContextSchema> & InferMiddlewareContextsInput<TMiddlewares>
+        ? CheckForDuplicateContexts<TContextSchema, TMiddlewares> extends true
+            ? z.input<TContextSchema> & InferMiddlewareContextsInput<TMiddlewares>
+            : never
         : InferMiddlewareContextsInput<TMiddlewares>;
     
+    // Type assertion needed because TypeScript can't narrow the conditional type
+    const { contextSchema: cs, middlewares: mw } = config as {
+        contextSchema?: TContextSchema;
+        middlewares?: TMiddlewares;
+    };
+    
     // Create merged context schema for validation
-    const mergedContextSchema = mergeContextSchemas(contextSchema, middlewares);
+    const mergedContextSchema = mergeContextSchemas(cs, mw);
     
     return {
         invoke: async (
@@ -356,7 +436,7 @@ export function createAgent<
 
             // Initialize middleware states by parsing their schemas
             const middlewareStates: Record<string, any> = {};
-            for (const middleware of middlewares || []) {
+            for (const middleware of mw || []) {
                 // Parse the schema to get default values
                 const defaultState = middleware.stateSchema.parse({});
                 // Spread the default state properties directly into middlewareStates
@@ -372,7 +452,7 @@ export function createAgent<
             // Process middlewares
             let currentState = initialState;
             
-            for (const middleware of middlewares || []) {
+            for (const middleware of mw || []) {
                 const controls = {} as Controls<FullState>;
                 
                 if (middleware.beforeModel) {

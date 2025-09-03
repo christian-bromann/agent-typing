@@ -8,6 +8,12 @@ const agent = createAgent({
         name: z.string(),
         age: z.number(),
         country: z.string().default("USA"),
+
+        /**
+         * Comment this out to trigger a conflict with middlewareC.
+         * Observer the type error message.
+         */
+        // customContextC: z.number(),
     }),
     middlewares: [
         /**
