@@ -11,7 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@langchain/langgraph": "^1.0.0-alpha.0",
+    "langchain": "next",
+    "@langchain/core": "next",
+    "@langchain/langgraph": "alpha",
     "typescript": "^5.9.2",
     "zod": "^4.1.5"
   }
