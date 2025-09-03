@@ -119,11 +119,11 @@ export type MiddlewareResult<TState> = TState | ControlAction | void;
 
 // Base middleware interface with unified state
 export interface IMiddleware<
-    TSchema extends z.ZodObject<z.ZodRawShape> = z.ZodObject<{}>,
-    TContextSchema extends z.ZodObject<z.ZodRawShape> = z.ZodObject<{}>,
+    TSchema extends z.ZodObject<z.ZodRawShape> | undefined = undefined,
+    TContextSchema extends z.ZodObject<z.ZodRawShape> | undefined = undefined,
     TFullContext = any
 > {
-    stateSchema: TSchema;
+    stateSchema?: TSchema;
     contextSchema?: TContextSchema;
     name: string;
     /**
@@ -137,45 +137,45 @@ export interface IMiddleware<
      */
     prepareCall?(
         options: PreparedCall,
-        state: z.infer<TSchema> & AgentBuiltInState,
+        state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
         runtime: Runtime<TFullContext>
     ): Promise<PreparedCall | undefined> | PreparedCall | undefined;
     beforeModel?(
-        state: z.infer<TSchema> & AgentBuiltInState,
+        state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
         runtime: Runtime<TFullContext>, 
-        controls: Controls<z.infer<TSchema> & AgentBuiltInState>
-    ): Promise<MiddlewareResult<Partial<z.infer<TSchema>>>>;
+        controls: Controls<(TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState>
+    ): Promise<MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>>;
     afterModel?(
-        state: z.infer<TSchema> & AgentBuiltInState,
+        state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
         runtime: Runtime<TFullContext>, 
-        controls: Controls<z.infer<TSchema> & AgentBuiltInState>
-    ): Promise<MiddlewareResult<Partial<z.infer<TSchema>>>>;
+        controls: Controls<(TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState>
+    ): Promise<MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>>;
 }
 
 // defineMiddleware with automatic schema inference
 export function defineMiddleware<
-    TSchema extends z.ZodObject<any>,
-    TContextSchema extends z.ZodObject<any> = z.ZodObject<{}>
+    TSchema extends z.ZodObject<any> | undefined = undefined,
+    TContextSchema extends z.ZodObject<any> | undefined = undefined
 >(
     config: {
         name: string;
-        stateSchema: TSchema;
+        stateSchema?: TSchema;
         contextSchema?: TContextSchema;
         prepareCall?: (
             options: PreparedCall,
-            state: z.infer<TSchema> & AgentBuiltInState,
-            runtime: Runtime<z.infer<TContextSchema>>
+            state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
+            runtime: Runtime<TContextSchema extends z.ZodObject<any> ? z.infer<TContextSchema> : {}>
         ) => Promise<PreparedCall | undefined> | PreparedCall | undefined;
         beforeModel?: (
-            state: z.infer<TSchema> & AgentBuiltInState,
-            runtime: Runtime<z.infer<TContextSchema>>,
-            controls: Controls<z.infer<TSchema> & AgentBuiltInState>
-        ) => Promise<MiddlewareResult<Partial<z.infer<TSchema>>>> | MiddlewareResult<Partial<z.infer<TSchema>>>;
+            state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
+            runtime: Runtime<TContextSchema extends z.ZodObject<any> ? z.infer<TContextSchema> : {}>,
+            controls: Controls<(TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState>
+        ) => Promise<MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>> | MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>;
         afterModel?: (
-            state: z.infer<TSchema> & AgentBuiltInState,
-            runtime: Runtime<z.infer<TContextSchema>>,
-            controls: Controls<z.infer<TSchema> & AgentBuiltInState>
-        ) => Promise<MiddlewareResult<Partial<z.infer<TSchema>>>> | MiddlewareResult<Partial<z.infer<TSchema>>>;
+            state: (TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState,
+            runtime: Runtime<TContextSchema extends z.ZodObject<any> ? z.infer<TContextSchema> : {}>,
+            controls: Controls<(TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}) & AgentBuiltInState>
+        ) => Promise<MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>> | MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>;
     }
 ): IMiddleware<TSchema, TContextSchema, any>;
 
@@ -225,16 +225,20 @@ type InferMiddlewareStates<T extends readonly any[]> = T extends readonly [
     ...infer Rest
 ]
     ? First extends IMiddleware<infer Schema, any, any>
-        ? Rest extends readonly any[]
-            ? z.infer<Schema> & InferMiddlewareStates<Rest>
-            : z.infer<Schema>
+        ? Schema extends z.ZodObject<any>
+            ? Rest extends readonly any[]
+                ? z.infer<Schema> & InferMiddlewareStates<Rest>
+                : z.infer<Schema>
+            : Rest extends readonly any[]
+                ? InferMiddlewareStates<Rest>
+                : {}
         : Rest extends readonly any[]
             ? InferMiddlewareStates<Rest>
             : {}
     : {};
 
 // Helper type to extract keys from a Zod schema
-type ExtractZodKeys<T> = T extends z.ZodObject<infer Shape> ? keyof Shape : never;
+type ExtractZodKeys<T> = T extends z.ZodObject<infer Shape> ? keyof Shape : T extends undefined ? never : never;
 
 // Helper type to collect all context keys from middlewares
 type CollectContextKeys<T extends readonly any[], Acc = never> = T extends readonly [
@@ -242,9 +246,13 @@ type CollectContextKeys<T extends readonly any[], Acc = never> = T extends reado
     ...infer Rest
 ]
     ? First extends IMiddleware<any, infer ContextSchema, any>
-        ? Rest extends readonly any[]
-            ? CollectContextKeys<Rest, Acc | ExtractZodKeys<ContextSchema>>
-            : Acc | ExtractZodKeys<ContextSchema>
+        ? ContextSchema extends z.ZodObject<any>
+            ? Rest extends readonly any[]
+                ? CollectContextKeys<Rest, Acc | ExtractZodKeys<ContextSchema>>
+                : Acc | ExtractZodKeys<ContextSchema>
+            : Rest extends readonly any[]
+                ? CollectContextKeys<Rest, Acc>
+                : Acc
         : Rest extends readonly any[]
             ? CollectContextKeys<Rest, Acc>
             : Acc
@@ -256,17 +264,21 @@ type FindDuplicateKeys<T extends readonly any[], SeenKeys = never> = T extends r
     ...infer Rest
 ]
     ? First extends IMiddleware<any, infer ContextSchema, any>
-        ? ExtractZodKeys<ContextSchema> extends infer CurrentKeys
-            ? CurrentKeys extends keyof any
-                ? CurrentKeys & SeenKeys extends never
-                    ? Rest extends readonly any[]
-                        ? FindDuplicateKeys<Rest, SeenKeys | CurrentKeys>
+        ? ContextSchema extends z.ZodObject<any>
+            ? ExtractZodKeys<ContextSchema> extends infer CurrentKeys
+                ? CurrentKeys extends keyof any
+                    ? CurrentKeys & SeenKeys extends never
+                        ? Rest extends readonly any[]
+                            ? FindDuplicateKeys<Rest, SeenKeys | CurrentKeys>
+                            : never
+                        : CurrentKeys & SeenKeys // Return the duplicate keys
+                    : Rest extends readonly any[]
+                        ? FindDuplicateKeys<Rest, SeenKeys>
                         : never
-                    : CurrentKeys & SeenKeys // Return the duplicate keys
-                : Rest extends readonly any[]
-                    ? FindDuplicateKeys<Rest, SeenKeys>
-                    : never
-            : never
+                : never
+            : Rest extends readonly any[]
+                ? FindDuplicateKeys<Rest, SeenKeys>
+                : never
         : Rest extends readonly any[]
             ? FindDuplicateKeys<Rest, SeenKeys>
             : never
@@ -389,6 +401,8 @@ export function createAgent<
             middlewares?: TMiddlewares;
         }
     : {
+        model?: string;
+        tools?: (string | ClientTool | ServerTool)[];
         contextSchema?: TContextSchema;
         middlewares?: TMiddlewares;
     }
@@ -437,10 +451,12 @@ export function createAgent<
             // Initialize middleware states by parsing their schemas
             const middlewareStates: Record<string, any> = {};
             for (const middleware of mw || []) {
-                // Parse the schema to get default values
-                const defaultState = middleware.stateSchema.parse({});
-                // Spread the default state properties directly into middlewareStates
-                Object.assign(middlewareStates, defaultState);
+                if (middleware.stateSchema) {
+                    // Parse the schema to get default values
+                    const defaultState = middleware.stateSchema.parse({});
+                    // Spread the default state properties directly into middlewareStates
+                    Object.assign(middlewareStates, defaultState);
+                }
             }
 
             // Create initial merged state

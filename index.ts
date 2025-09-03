@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createAgent } from "./agent.js";
-import { middlewareA, middlewareB, middlewareC } from "./middleware.js";
+import { middlewareA, middlewareB, middlewareC, middlewareD } from "./middleware.js";
 
 // Example 1: Using pre-defined middlewares
 const agent = createAgent({
@@ -29,6 +29,10 @@ const agent = createAgent({
          * Adds `customStateC` to the state
          */
         middlewareC,
+        /**
+         * Adds nothing to the state
+         */
+        middlewareD,
     ] as const,
 });
 

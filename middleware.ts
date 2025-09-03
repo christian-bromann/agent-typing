@@ -12,7 +12,7 @@ export const middlewareA = defineMiddleware({
     customStateA: z.boolean().default(false),
   }),
   contextSchema: z.object({
-    customContextA: z.boolean().default(false),
+    customContextA: z.boolean(),
   }),
   beforeModel: (state, runtime, controls) => {
     console.log('customStateA value:', state.customStateA);
@@ -52,7 +52,7 @@ export const middlewareB = defineMiddleware({
     customStateB: z.enum(['a', 'b', 'c']).default('a'),
   }),
   contextSchema: z.object({
-    customContextB: z.number().default(0),
+    customContextB: z.number(),
   }),
   beforeModel: async (state, runtime, controls) => {
     console.log('customStateB value:', state.customStateB);
@@ -114,5 +114,13 @@ export const middlewareC = defineMiddleware({
     console.log('customStateC value:', state.customStateC);
     console.log('built-in state properties', state.messages);
     console.log('built-in runtime properties', runtime.context.customContextC);
+  },
+});
+
+export const middlewareD = defineMiddleware({
+  name: 'middlewareD',
+  beforeModel: async (state, runtime) => {
+    console.log('MiddlewareD beforeModel');
+    console.log('built-in state properties', state.messages);
   },
 });
