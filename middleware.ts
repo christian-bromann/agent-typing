@@ -89,6 +89,22 @@ export const middlewareC = defineMiddleware({
   contextSchema: z.object({
     customContextC: z.enum(['a', 'b', 'c']),
   }),
+  prepareCall: (options, state, runtime) => {
+    console.log('MiddlewareC prepareCall');
+    console.log('Current model:', options.model);
+    console.log('Context value:', runtime.context.customContextC);
+    
+    // Example: Add a system message based on context
+    if (runtime.context.customContextC === 'a') {
+      return {
+        ...options,
+        systemMessage: 'You are in mode A. Be extra helpful.',
+      };
+    }
+    
+    // Return undefined to pass through unchanged
+    return undefined;
+  },
   beforeModel: async (state, runtime) => {
     console.log('customStateC value:', state.customStateC);
     console.log('built-in state properties', state.messages);

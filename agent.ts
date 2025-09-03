@@ -42,6 +42,49 @@ export interface ToolResult {
     error?: string;
 }
 
+// Language model and tool types
+export type LanguageModelLike = any; // Placeholder for actual language model type
+export type ClientTool = any; // Placeholder for client tool type
+export type ServerTool = any; // Placeholder for server tool type
+
+/**
+ * Configuration for modifying a model call at runtime.
+ * All fields are optional and only provided fields will override defaults.
+ */
+export interface PreparedCall {
+    /**
+     * The model to use for this step.
+     */
+    model?: LanguageModelLike;
+    /**
+     * The messages to send to the model.
+     */
+    messages?: BaseMessage[];
+    /**
+     * The system message for this step.
+     */
+    systemMessage?: string;
+    /**
+     * Tool choice configuration (model-specific format).
+     * Can be one of:
+     * - `"auto"`: means the model can pick between generating a message or calling one or more tools.
+     * - `"none"`: means the model will not call any tool and instead generates a message.
+     * - `"required"`: means the model must call one or more tools.
+     * - `{ type: "function", function: { name: string } }`: The model will use the specified function.
+     */
+    toolChoice?:
+        | "auto"
+        | "none"
+        | "required"
+        | { type: "function"; function: { name: string } };
+
+    /**
+     * The tools to make available for this step.
+     * Can be tool names (strings) or tool instances.
+     */
+    tools?: (string | ClientTool | ServerTool)[];
+}
+
 // Runtime information (readonly)
 export interface Runtime<TContext = any> {
     readonly toolCalls: ToolCall[];
@@ -83,6 +126,20 @@ export interface IMiddleware<
     stateSchema: TSchema;
     contextSchema?: TContextSchema;
     name: string;
+    /**
+     * Runs before each LLM call, can modify call parameters, changes are not persistent
+     * e.g. if you change `model`, it will only be changed for the next model call
+     * 
+     * @param options - Current call options (can be modified by previous middleware)
+     * @param state - Current state (read-only in this phase)
+     * @param runtime - Runtime context and metadata
+     * @returns Modified options or undefined to pass through
+     */
+    prepareCall?(
+        options: PreparedCall,
+        state: z.infer<TSchema> & AgentBuiltInState,
+        runtime: Runtime<TFullContext>
+    ): Promise<PreparedCall | undefined> | PreparedCall | undefined;
     beforeModel?(
         state: z.infer<TSchema> & AgentBuiltInState,
         runtime: Runtime<TFullContext>, 
@@ -106,6 +163,11 @@ export function defineMiddleware<
         name: string;
         stateSchema: TSchema;
         contextSchema?: TContextSchema;
+        prepareCall?: (
+            options: PreparedCall,
+            state: z.infer<TSchema> & AgentBuiltInState,
+            runtime: Runtime<z.infer<TContextSchema>>
+        ) => Promise<PreparedCall | undefined> | PreparedCall | undefined;
         beforeModel?: (
             state: z.infer<TSchema> & AgentBuiltInState,
             runtime: Runtime<z.infer<TContextSchema>>,
@@ -126,6 +188,11 @@ export function defineMiddleware(config: any): any {
         stateSchema: config.stateSchema,
         contextSchema: config.contextSchema,
     };
+    
+    if (config.prepareCall) {
+        middleware.prepareCall = async (options, state, runtime) => 
+            Promise.resolve(config.prepareCall!(options, state, runtime));
+    }
     
     if (config.beforeModel) {
         middleware.beforeModel = async (state, runtime, controls) => 
@@ -227,7 +294,7 @@ export function createAgent<
     middlewares,
 }: {
     contextSchema?: TContextSchema;
-    middlewares: TMiddlewares;
+    middlewares?: TMiddlewares;
 }) {
     // Create properly typed middleware array with full state type
     type FullState = InferMergedState<TMiddlewares>;
@@ -256,7 +323,7 @@ export function createAgent<
 
             // Initialize middleware states by parsing their schemas
             const middlewareStates: Record<string, any> = {};
-            for (const middleware of middlewares) {
+            for (const middleware of middlewares || []) {
                 // Parse the schema to get default values
                 const defaultState = middleware.stateSchema.parse({});
                 // Spread the default state properties directly into middlewareStates
@@ -272,7 +339,7 @@ export function createAgent<
             // Process middlewares
             let currentState = initialState;
             
-            for (const middleware of middlewares) {
+            for (const middleware of middlewares || []) {
                 const controls = {} as Controls<FullState>;
                 
                 if (middleware.beforeModel) {
