@@ -1,38 +1,41 @@
 import { z } from "zod";
 import { createAgent } from "./agent.js";
-import { middlewareA, middlewareB, MiddlewareC } from "./middleware.js";
+import { middlewareA, middlewareB, middlewareC } from "./middleware.js";
 
-const stateSchema = z.object({
-    name: z.string(),
-    age: z.number(),
-});
-
+// Example 1: Using pre-defined middlewares
 const agent = createAgent({
-    stateSchema,
+    contextSchema: z.object({
+        name: z.string(),
+        age: z.number(),
+    }),
     middlewares: [
         /**
          * No need to instantiate - just pass the middleware directly
-         * Adds `customPropertyA` to the state
+         * Adds `customStateA` to the state
          */
         middlewareA,
         /**
-         * Adds `customPropertyB` to the state
+         * Adds `customStateB` to the state
          */
         middlewareB,
         /**
-         * Adds `customPropertyC` to the state
+         * Adds `customStateC` to the state
          */
-        new MiddlewareC(),
+        middlewareC,
     ] as const,
 });
 
-const result = await agent.invoke({
-    message: "Hello, world!",
+const result = await agent.invoke("Hello, world!", {
+    name: "John",
+    age: 30,
+    // Context from middlewares:
+    customContextA: true,    // required by middlewareA
+    customContextB: 42,      // required by middlewareB
+    customContextC: "a",     // required by middlewareC
 });
 
-console.log(result.name); // should be typed as string from `stateSchema`
-console.log(result.age); // should be typed as number from `stateSchema`
-console.log(result.customPropertyA); // should be typed as boolean from `MiddlewareA`
-console.log(result.customPropertyB); // should be typed as enum from `MiddlewareB`
-console.log(result.customPropertyC); // should be typed as number from `MiddlewareC`
-console.log(result.messages); // should be typed as BaseMessage[] from agent's built-in state
+// Result contains merged state from all middlewares
+console.log(result.customStateA); // boolean from MiddlewareA
+console.log(result.customStateB); // enum from MiddlewareB
+console.log(result.customStateC); // number from middlewareC
+console.log(result.messages); // BaseMessage[] from agent's built-in state
