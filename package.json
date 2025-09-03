@@ -1,0 +1,18 @@
+{
+  "name": "fooooo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/langgraph": "^1.0.0-alpha.0",
+    "typescript": "^5.9.2",
+    "zod": "^4.1.5"
+  }
+}
