@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent } from '../agent.js';
 
 /**
  * Dynamic Model Middleware - Selects different models based on task complexity
@@ -8,7 +8,7 @@ import { defineMiddleware, createAgent } from '../agent.js';
  * - A fast model for simple queries
  * - A powerful model for complex reasoning
  */
-export const dynamicModelMiddleware = defineMiddleware({
+export const dynamicModelMiddleware = createMiddleware({
     name: 'DynamicModel',
     stateSchema: z.object({
         taskComplexity: z.enum(['simple', 'complex']).default('simple'),
@@ -48,7 +48,7 @@ export const dynamicModelMiddleware = defineMiddleware({
  * This middleware detects what the user wants to do and provides
  * only the relevant tools for that task.
  */
-export const dynamicToolsMiddleware = defineMiddleware({
+export const dynamicToolsMiddleware = createMiddleware({
     name: 'DynamicTools',
     stateSchema: z.object({
         detectedIntent: z.enum(['file_ops', 'search', 'calculation', 'general']).default('general'),
@@ -89,7 +89,7 @@ export const dynamicToolsMiddleware = defineMiddleware({
  * - Task type (coding/writing/analysis)
  * - Conversation length (add summarization for long chats)
  */
-export const dynamicPromptsMiddleware = defineMiddleware({
+export const dynamicPromptsMiddleware = createMiddleware({
     name: 'DynamicPrompts',
     stateSchema: z.object({
         conversationTone: z.enum(['formal', 'casual']).default('casual'),

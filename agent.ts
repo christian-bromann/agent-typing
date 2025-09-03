@@ -152,8 +152,8 @@ export interface IMiddleware<
     ): Promise<MiddlewareResult<Partial<TSchema extends z.ZodObject<any> ? z.infer<TSchema> : {}>>>;
 }
 
-// defineMiddleware with automatic schema inference
-export function defineMiddleware<
+// createMiddleware with automatic schema inference
+export function createMiddleware<
     TSchema extends z.ZodObject<any> | undefined = undefined,
     TContextSchema extends z.ZodObject<any> | undefined = undefined
 >(
@@ -180,7 +180,7 @@ export function defineMiddleware<
 ): IMiddleware<TSchema, TContextSchema, any>;
 
 // Implementation
-export function defineMiddleware(config: any): any {
+export function createMiddleware(config: any): any {
     const middleware: IMiddleware<any, any, any> = {
         name: config.name,
         stateSchema: config.stateSchema,

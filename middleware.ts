@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import {
-  defineMiddleware,
+  createMiddleware,
   ToolMessage,
   AIMessage,
   AssistantMessage,
 } from './agent.js';
 
-export const middlewareA = defineMiddleware({
+export const middlewareA = createMiddleware({
   name: 'MiddlewareA',
   stateSchema: z.object({
     customStateA: z.boolean().default(false),
@@ -46,7 +46,7 @@ export const middlewareA = defineMiddleware({
   },
 });
 
-export const middlewareB = defineMiddleware({
+export const middlewareB = createMiddleware({
   name: 'MiddlewareB',
   stateSchema: z.object({
     customStateB: z.enum(['a', 'b', 'c']).default('a'),
@@ -81,7 +81,7 @@ export const middlewareB = defineMiddleware({
   },
 });
 
-export const middlewareC = defineMiddleware({
+export const middlewareC = createMiddleware({
   name: 'MiddlewareC',
   stateSchema: z.object({
     customStateC: z.number().default(0),
@@ -117,7 +117,7 @@ export const middlewareC = defineMiddleware({
   },
 });
 
-export const middlewareD = defineMiddleware({
+export const middlewareD = createMiddleware({
   name: 'middlewareD',
   beforeModel: async (state, runtime) => {
     console.log('MiddlewareD beforeModel');

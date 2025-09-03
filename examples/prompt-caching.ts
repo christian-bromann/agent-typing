@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 // Extend BaseMessage type to include cache_control
 interface CachedMessage extends BaseMessage {
@@ -15,7 +15,7 @@ interface CachedMessage extends BaseMessage {
  * This middleware adds cache_control blocks to messages to enable Anthropic's
  * prompt caching feature, reducing costs and latency for repetitive prompts.
  */
-export const promptCachingMiddleware = defineMiddleware({
+export const promptCachingMiddleware = createMiddleware({
   name: 'PromptCachingMiddleware',
   stateSchema: z.object({
     // Track cache usage for monitoring

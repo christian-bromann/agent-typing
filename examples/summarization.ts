@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 // Simple summarization middleware that summarizes long conversations
-export const summarizationMiddleware = defineMiddleware({
+export const summarizationMiddleware = createMiddleware({
   name: 'SummarizationMiddleware',
   stateSchema: z.object({
     messageCount: z.number().default(0),

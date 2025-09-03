@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { InMemoryStore } from '@langchain/core/stores';
-import { defineMiddleware, createAgent, AssistantMessage } from '../agent.js';
+import { createMiddleware, createAgent, AssistantMessage } from '../agent.js';
 
 // Global store instance
 const memoryStore = new InMemoryStore();
@@ -9,7 +9,7 @@ const memoryStore = new InMemoryStore();
  * Long Term Memory Middleware
  * Enables agents to remember customer preferences and past interactions
  */
-export const longTermMemoryMiddleware = defineMiddleware({
+export const longTermMemoryMiddleware = createMiddleware({
     name: 'LongTermMemory',
     stateSchema: z.object({
         // Current customer memories loaded for this conversation

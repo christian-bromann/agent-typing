@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 /**
  * Simple Swarm Middleware Example
@@ -8,7 +8,7 @@ import { defineMiddleware, createAgent, BaseMessage } from '../agent.js';
  */
 
 // Define the swarm middleware
-export const simpleSwarmMiddleware = defineMiddleware({
+export const simpleSwarmMiddleware = createMiddleware({
   name: 'SimpleSwarm',
   
   stateSchema: z.object({

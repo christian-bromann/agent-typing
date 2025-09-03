@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent } from '../agent.js';
 
 /**
  * Tool categories for the tools to select from
@@ -29,7 +29,7 @@ const KEYWORD_MAP: Record<string, string[]> = {
  * This middleware analyzes the user's query and current conversation to
  * select only the most relevant tools, reducing model confusion and costs.
  */
-export const bigToolMiddleware = defineMiddleware({
+export const bigToolMiddleware = createMiddleware({
   name: 'BigToolMiddleware',
   stateSchema: z.object({
     // Track tool usage for optimization

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage, AIMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage, AIMessage } from '../agent.js';
 
 /**
  * Reflection Middleware - Implements Basic Reflection for improved response quality
@@ -22,7 +22,7 @@ import { defineMiddleware, createAgent, BaseMessage, AIMessage } from '../agent.
  * The reflection process is transparent to the end user - they only see the final
  * refined response, not the intermediate drafts and critiques.
  */
-export const reflectionMiddleware = defineMiddleware({
+export const reflectionMiddleware = createMiddleware({
     name: 'Reflection',
     stateSchema: z.object({
         // Track current iteration in the reflection loop

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage, AIMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage, AIMessage } from '../agent.js';
 
 /**
  * Swarm Agent Middleware
@@ -65,7 +65,7 @@ const AGENT_DEFINITIONS: Record<AgentType, {
 };
 
 // Create the swarm middleware
-export const swarmMiddleware = defineMiddleware({
+export const swarmMiddleware = createMiddleware({
   name: 'SwarmAgentMiddleware',
   
   // State schema tracks current agent and handoff history

@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { defineMiddleware, BaseMessage } from '../agent.js';
+import { createMiddleware, BaseMessage } from '../agent.js';
 
 /**
  * Trimming middleware - keeps conversation history within limits
  */
-export const trimmingMiddleware = defineMiddleware({
+export const trimmingMiddleware = createMiddleware({
   name: 'TrimmingMiddleware',
   stateSchema: z.object({
     // State could track things like how many times we've trimmed

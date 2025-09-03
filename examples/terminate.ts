@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { defineMiddleware } from '../agent.js';
+import { createMiddleware } from '../agent.js';
 
 /**
  * Middleware that terminates after a specific tool is called 5 times
  */
-export const toolCallLimitMiddleware = defineMiddleware({
+export const toolCallLimitMiddleware = createMiddleware({
   name: 'ToolCallLimitMiddleware',
   stateSchema: z.object({
     toolCallCount: z.record(z.string(), z.number()).default({}),
@@ -47,7 +47,7 @@ export const toolCallLimitMiddleware = defineMiddleware({
 /**
  * Middleware that terminates after 10 model requests
  */
-export const modelRequestLimitMiddleware = defineMiddleware({
+export const modelRequestLimitMiddleware = createMiddleware({
   name: 'ModelRequestLimitMiddleware',
   stateSchema: z.object({
     modelRequestCount: z.number().default(0),

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage, AssistantMessage } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage, AssistantMessage } from '../agent.js';
 
 /**
  * Deep Agent Middleware - Implements the four core characteristics:
@@ -8,7 +8,7 @@ import { defineMiddleware, createAgent, BaseMessage, AssistantMessage } from '..
  * 3. Sub agents capability
  * 4. Virtual file system
  */
-export const deepAgentMiddleware = defineMiddleware({
+export const deepAgentMiddleware = createMiddleware({
     name: 'DeepAgent',
     stateSchema: z.object({
         // Planning tool - todo list stored in state

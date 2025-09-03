@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent, BaseMessage, ToolCall, ToolResult, Controls } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage, ToolCall, ToolResult, Controls } from '../agent.js';
 
 /**
  * JSON Patch operation types based on RFC 6902
@@ -70,7 +70,7 @@ function applyJsonPatches(target: any, patches: JsonPatchOp[]): any {
  * - Enables iterative refinement of complex nested structures
  * - Reduces costs by only regenerating the parts that failed
  */
-export const trustcallMiddleware = defineMiddleware({
+export const trustcallMiddleware = createMiddleware({
   name: 'TrustcallMiddleware',
   stateSchema: z.object({
     // Track validation errors and patches

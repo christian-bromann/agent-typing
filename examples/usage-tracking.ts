@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent } from '../agent.js';
 
 /**
  * Simple usage tracking middleware that tracks:
@@ -7,7 +7,7 @@ import { defineMiddleware, createAgent } from '../agent.js';
  * - Number of model calls
  * - Tool call frequency
  */
-export const usageTrackingMiddleware = defineMiddleware({
+export const usageTrackingMiddleware = createMiddleware({
   name: 'UsageTrackingMiddleware',
   stateSchema: z.object({
     usage: z.object({
