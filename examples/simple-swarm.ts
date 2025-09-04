@@ -63,7 +63,10 @@ const agent = createAgent({
 middlewares: [simpleSwarmMiddleware] as const
 });
 
-const result = await agent.invoke("Analyze this sentence for grammar and fix any issues: 'The cat are sleeping on the couch.'");
+const result = await agent.invoke({
+    messages: [new BaseMessage('user', "Analyze this sentence for grammar and fix any issues: 'The cat are sleeping on the couch.'")],
+}, {
+});
 
 console.log('Final state:', {
     activeAgent: result.activeAgent,

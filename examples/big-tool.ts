@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 /**
  * Tool categories for the tools to select from
@@ -33,7 +33,7 @@ export const bigToolMiddleware = createMiddleware({
   name: 'BigToolMiddleware',
   stateSchema: z.object({
     // Track tool usage for optimization
-    toolUsageCount: z.record(z.string(), z.number()).default({}),
+    toolUsageCount: z.record(z.string(), z.number()).optional(),
   }),
   contextSchema: z.object({
     // All available tools grouped by category
@@ -75,7 +75,7 @@ export const bigToolMiddleware = createMiddleware({
       }
     } else {
       // Fall back to most used tools
-      const sortedTools = Object.entries(state.toolUsageCount)
+      const sortedTools = Object.entries(state.toolUsageCount || {})
         .sort(([, a], [, b]) => b - a)
         .slice(0, runtime.context.maxToolsPerRequest)
         .map(([tool]) => tool);
@@ -113,7 +113,9 @@ const agent = createAgent({
 
 // Example with a large tool set
 const result = await agent.invoke(
-  "Search for information about TypeScript generics and save it to a file",
+  {
+    messages: [new BaseMessage('user', 'Search for information about TypeScript generics and save it to a file')],
+  },
   {
     maxToolsPerRequest: 4,
     enableKeywordMatching: true,

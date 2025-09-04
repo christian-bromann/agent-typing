@@ -308,10 +308,12 @@ const agent = createAgent({
 
 // Example 1: Extraction with validation retry
 const extractionResult = await agent.invoke(
-  `Extract user preferences from this conversation:
-  User: I'd like to get weekly email updates about new features and security alerts.
-  Support: Sure! Should we enable SMS notifications too?
-  User: No thanks, email is fine. And please keep my profile private.`,
+  {
+    messages: [new BaseMessage('user', `Extract user preferences from this conversation:
+      User: I'd like to get weekly email updates about new features and security alerts.
+      Support: Sure! Should we enable SMS notifications too?
+      User: No thanks, email is fine. And please keep my profile private.`)],
+  },
   {
     task: 'extract_preferences',
     maxRetries: 3,
@@ -323,7 +325,9 @@ const extractionResult = await agent.invoke(
 
 // Example 2: Updating existing data without loss
 const updateResult = await agent.invoke(
-  `Update the preferences based on: User wants daily emails now and enabled data sharing.`,
+  {
+    messages: [new BaseMessage('user', `Update the preferences based on: User wants daily emails now and enabled data sharing.`)],
+  },
   {
     task: 'update_preferences',
     existing: {

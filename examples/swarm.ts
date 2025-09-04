@@ -206,7 +206,9 @@ const agent = createAgent({
 
 // Example 1: Research and implementation task
 const result = await agent.invoke(
-  "I need to implement a caching solution for our API. Can you research the best options and provide implementation code?",
+  {
+    messages: [new BaseMessage('user', "I need to implement a caching solution for our API. Can you research the best options and provide implementation code?")],
+  },
   {
     maxHandoffs: 5,
     verbose: true

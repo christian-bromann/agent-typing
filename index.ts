@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createAgent } from "./agent.js";
+import { createAgent, BaseMessage } from "./agent.js";
 import { middlewareA, middlewareB, middlewareC, middlewareD } from "./middleware.js";
 
 // Example 1: Using pre-defined middlewares
@@ -36,7 +36,15 @@ const agent = createAgent({
     ] as const,
 });
 
-const result = await agent.invoke("Hello, world!", {
+const result = await agent.invoke({
+    // built-in state
+    messages: [new BaseMessage('user', 'Hello, world!')],
+    // middleware state required by middlewares
+    customStateA: false,
+    // optional state properties are not required to be provided
+    // customStateB: 'a',
+    // customStateC: 0,
+}, {
     name: "John",
     age: 30,
 

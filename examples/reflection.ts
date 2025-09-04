@@ -144,7 +144,14 @@ const agent = createAgent({
 });
 
 // Example 1: Basic usage with default settings
-const result1 = await agent.invoke('Explain how photosynthesis works');
+const result1 = await agent.invoke({
+    messages: [new BaseMessage('user', 'Explain how photosynthesis works')],
+}, {
+    reflection: {
+        enabled: true,
+        maxIterations: 2,
+    },
+});
 
 console.log('Final response after reflection:');
 console.log(result1.messages[result1.messages.length - 1]?.content || '');
@@ -152,7 +159,9 @@ console.log(`\nReflections generated: ${result1.reflections?.length || 0}`);
 
 // Example 2: Custom reflection prompt and more iterations
 const result2 = await agent.invoke(
-    'Write a Python function to calculate fibonacci numbers',
+    {
+        messages: [new BaseMessage('user', 'Write a Python function to calculate fibonacci numbers')],
+    },
     {
         reflection: {
             maxIterations: 3,
@@ -170,7 +179,9 @@ console.log(result2.messages[result2.messages.length - 1]?.content || '');
 
 // Example 3: Disabled reflection (normal response)
 const result3 = await agent.invoke(
-    'What is the capital of France?',
+    {
+        messages: [new BaseMessage('user', 'What is the capital of France?')],
+    },
     {
         reflection: {
             enabled: false, // Simple query doesn't need reflection

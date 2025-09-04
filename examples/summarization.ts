@@ -46,7 +46,9 @@ const agent = createAgent({
 });
 
 // Usage example (commented out to avoid execution)
-const result = await agent.invoke("Tell me about AI", {
+const result = await agent.invoke({
+    messages: [new BaseMessage('user', "Tell me about AI")],
+}, {
   userId: "user123",
   maxMessagesBeforeSummary: 5, // Summarize after 5 messages
 });

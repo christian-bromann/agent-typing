@@ -102,7 +102,6 @@ export interface Runtime<TContext = any> {
 export interface Controls<TState = any> {
     jumpTo(target: 'model' | 'tools', stateUpdate?: Partial<TState>): ControlAction;
     terminate(result?: Partial<TState> | Error): ControlAction;
-    retry(stateUpdate?: Partial<TState>, options?: RetryOptions): ControlAction;
 }
 
 // Control action type
@@ -214,6 +213,10 @@ export type AgentBuiltInState = {
 type InferMergedState<TMiddlewares extends readonly any[]> = 
     InferMiddlewareStates<TMiddlewares> & AgentBuiltInState;
 
+// Type for the input merged state (with optional defaults)
+type InferMergedStateInput<TMiddlewares extends readonly any[]> = 
+    InferMiddlewareStatesInput<TMiddlewares> & AgentBuiltInState;
+
 // Helper type to extract state type from agent configuration
 export type InferAgentState<
     TMiddlewares extends readonly any[]
@@ -234,6 +237,24 @@ type InferMiddlewareStates<T extends readonly any[]> = T extends readonly [
                 : {}
         : Rest extends readonly any[]
             ? InferMiddlewareStates<Rest>
+            : {}
+    : {};
+
+// Helper to infer all middleware states with optional defaults (for input)
+type InferMiddlewareStatesInput<T extends readonly any[]> = T extends readonly [
+    infer First,
+    ...infer Rest
+]
+    ? First extends IMiddleware<infer Schema, any, any>
+        ? Schema extends z.ZodObject<any>
+            ? Rest extends readonly any[]
+                ? z.input<Schema> & InferMiddlewareStatesInput<Rest>
+                : z.input<Schema>
+            : Rest extends readonly any[]
+                ? InferMiddlewareStatesInput<Rest>
+                : {}
+        : Rest extends readonly any[]
+            ? InferMiddlewareStatesInput<Rest>
             : {}
     : {};
 
@@ -409,6 +430,7 @@ export function createAgent<
 ) {
     // Create properly typed middleware array with full state type
     type FullState = InferMergedState<TMiddlewares>;
+    type FullStateInput = InferMergedStateInput<TMiddlewares>;
     // Use z.input to make fields with defaults optional
     type FullContext = TContextSchema extends z.ZodObject<any> 
         ? CheckForDuplicateContexts<TContextSchema, TMiddlewares> extends true
@@ -427,7 +449,7 @@ export function createAgent<
     
     return {
         invoke: async (
-            message: string,
+            state: FullStateInput,
             ...args: IsAllOptional<FullContext> extends true 
                 ? [context?: FullContext] 
                 : [context: FullContext]
@@ -462,7 +484,7 @@ export function createAgent<
             // Create initial merged state
             const initialState = {
                 ...middlewareStates,
-                messages: [new BaseMessage('user', message)]
+                ...state,
             } as FullState;
 
             // Process middlewares

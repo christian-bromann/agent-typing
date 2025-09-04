@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 /**
  * Dynamic Model Middleware - Selects different models based on task complexity
@@ -168,7 +168,9 @@ const models = {
 };
 
 // Invoke with dynamic context
-const result = await agent.invoke('Analyze this complex architecture pattern', {
+const result = await agent.invoke({
+    messages: [new BaseMessage('user', 'Analyze this complex architecture pattern')],
+}, {
     models,
     userPreferences: {
         tone: 'formal',

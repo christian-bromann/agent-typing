@@ -277,7 +277,9 @@ const agent1 = createAgent({
 });
 
 const result1 = await agent1.invoke(
-  'Update profile for user with ID "not-a-uuid", age 15, email "invalid-email"',
+  {
+    messages: [new BaseMessage('user', 'Update profile for user with ID "not-a-uuid", age 15, email "invalid-email"')],
+  },
   { maxRetries: 2 }
 );
 console.log('AI Fix Result - Attempts:', result1.errorAttempts);
@@ -290,7 +292,9 @@ const agent2 = createAgent({
 });
 
 const result2 = await agent2.invoke(
-  'Update user 550e8400-e29b-41d4-a716-446655440000 with age 25 and theme "blue"',
+  {
+    messages: [new BaseMessage('user', 'Update user 550e8400-e29b-41d4-a716-446655440000 with age 25 and theme "blue"')],
+  },
   {}
 );
 console.log('Auto Fix Result - Fixed calls:', result2.fixedCalls);
@@ -303,7 +307,9 @@ const agent3 = createAgent({
 });
 
 const result3 = await agent3.invoke(
-  'What is the weather in New York?',
+  {
+    messages: [new BaseMessage('user', 'What is the weather in New York?')],
+  },
   { includeErrorDetails: true }
 );
 console.log('Retry Context Result - History:', result3.retryHistory.length, 'attempts');
@@ -316,7 +322,9 @@ const agent4 = createAgent({
 });
 
 const result4 = await agent4.invoke(
-  'Update user profile and check the weather in their city',
+  {
+    messages: [new BaseMessage('user', 'Update user profile and check the weather in their city')],
+  },
   { maxRetries: 2, includeErrorDetails: true }
 );
 console.log('Combined Result - Errors handled:', Object.keys(result4.errorAttempts).length);

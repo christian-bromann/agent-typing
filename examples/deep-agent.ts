@@ -140,7 +140,9 @@ Guidelines:
                     
                     // Simulate sub-agent execution
                     const subResult = await subAgent.invoke(
-                        `Complete this subtask: ${task.task}`,
+                        {
+                            messages: [new BaseMessage('user', `Complete this subtask: ${task.task}`)],
+                        },
                         { parentTaskId: task.id }
                     );
                     
@@ -175,7 +177,9 @@ const deepAgent = createAgent({
 
 // Example invocation
 const result = await deepAgent.invoke(
-    "Research and implement a user authentication system with JWT tokens",
+    {
+        messages: [new BaseMessage('user', 'Research and implement a user authentication system with JWT tokens')],
+    },
     {
         projectName: "MyApp",
         customInstructions: "Focus on security best practices and include rate limiting",

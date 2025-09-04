@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createMiddleware } from '../agent.js';
+import { createMiddleware, BaseMessage } from '../agent.js';
 
 /**
  * Middleware that terminates after a specific tool is called 5 times
@@ -81,7 +81,9 @@ const toolLimitAgent = createAgent({
 
 // Will terminate after 'search' tool is called 5 times
 const result1 = await toolLimitAgent.invoke(
-  'Search for information repeatedly',
+  {
+    messages: [new BaseMessage('user', 'Search for information repeatedly')],
+  },
   {
     toolCallLimitation: [{
         targetTool: 'search',
@@ -100,7 +102,9 @@ const modelLimitAgent = createAgent({
 
 // Will terminate after 10 model requests
 const result2 = await modelLimitAgent.invoke(
-  'Have a long conversation',
+  {
+    messages: [new BaseMessage('user', 'Have a long conversation')],
+  },
   { maxRequests: 10 }
 );
 
@@ -111,7 +115,9 @@ const combinedAgent = createAgent({
 
 // Will terminate when either limit is reached
 const result3 = await combinedAgent.invoke(
-  'Complex task with tool usage',
+  {
+    messages: [new BaseMessage('user', 'Complex task with tool usage')],
+  },
   { 
     toolCallLimitation: [{
         targetTool: 'calculator',

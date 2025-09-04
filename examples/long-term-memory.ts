@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { InMemoryStore } from '@langchain/core/stores';
-import { createMiddleware, createAgent, AssistantMessage } from '../agent.js';
+import { createMiddleware, createAgent, AssistantMessage, BaseMessage } from '../agent.js';
 
 // Global store instance
 const memoryStore = new InMemoryStore();
@@ -175,7 +175,9 @@ const agent = createAgent({
 // First interaction
 console.log('First interaction:');
 const result1 = await agent.invoke(
-    "Hi, I'm having trouble with my account login",
+    {
+        messages: [new BaseMessage('user', "Hi, I'm having trouble with my account login")],
+    },
     { customerId: 'customer-123' }
 );
 
@@ -188,7 +190,9 @@ result1.messages.push(new AssistantMessage(
 // Second interaction - agent should remember
 console.log('\nSecond interaction:');
 const result2 = await agent.invoke(
-    "Actually, I prefer to be called Johnny",
+    {
+        messages: [new BaseMessage('user', "Actually, I prefer to be called Johnny")],
+    },
     { customerId: 'customer-123' }
 );
 

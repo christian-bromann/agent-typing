@@ -42,5 +42,11 @@ const agent = createAgent({
 
 // Example usage
 const result = await agent.invoke(
-  'Hello, this is a long conversation that will be trimmed'
+  {
+    messages: [new BaseMessage('user', 'Hello, this is a long conversation that will be trimmed')],
+  },
+  {
+    maxMessages: 10,
+    maxTokensPerMessage: 500,
+  }
 );

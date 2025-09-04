@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createMiddleware, createAgent } from '../agent.js';
+import { createMiddleware, createAgent, BaseMessage } from '../agent.js';
 
 /**
  * Simple usage tracking middleware that tracks:
@@ -70,7 +70,9 @@ const trackingAgent = createAgent({
 
 // Run the agent
 const result = await trackingAgent.invoke(
-  'Calculate the sum of 123 and 456, then search for information about AI'
+  {
+    messages: [new BaseMessage('user', 'Calculate the sum of 123 and 456, then search for information about AI')],
+  }
 );
 
 // Access usage statistics from the result

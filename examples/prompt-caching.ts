@@ -130,7 +130,9 @@ const agent = createAgent({
 
 // Usage example with caching enabled
 const result = await agent.invoke(
-  "What are the key features of prompt caching?",
+  {
+    messages: [new BaseMessage('user', "What are the key features of prompt caching?")],
+  },
   {
     enableCaching: true,
     cacheTTL: '5m',
