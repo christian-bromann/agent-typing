@@ -201,9 +201,9 @@ Example patch format:
                     retryState: { isRetrying: false, currentAttempt: 0 },
                   };
                 } catch (e: any) {
-                  // Still failing, maybe retry
+                  // Still failing, maybe retry using jumpTo
                   if (state.retryState.currentAttempt < runtime.context.maxRetries) {
-                    return controls.retry({
+                    return controls.jumpTo('model', {
                       validationAttempts: [
                         ...state.validationAttempts,
                         {
@@ -252,8 +252,11 @@ Example patch format:
           toolError.error?.includes('required') ||
           toolError.error?.includes('invalid')) {
         
-        // Start retry process
-        return controls.retry({
+        // Start retry process using jumpTo
+        if (runtime.context.verbose) {
+          console.log(`Validation error in ${toolCall.name}: ${toolError.error}`);
+        }
+        return controls.jumpTo('model', {
           validationAttempts: [
             ...state.validationAttempts,
             {
@@ -269,9 +272,6 @@ Example patch format:
             toolCallId: toolCall.id,
             currentAttempt: 1,
           }
-        }, {
-          reason: `Validation error in ${toolCall.name}: ${toolError.error}`,
-          maxAttempts: runtime.context.maxRetries,
         });
       }
     }
